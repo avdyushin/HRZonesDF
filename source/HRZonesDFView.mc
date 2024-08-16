@@ -193,30 +193,49 @@ class HRZonesDFView extends WatchUi.DataField {
         var penWidth = 7;
         dc.setColor(color, color);
         dc.setPenWidth(penWidth);
-        dc.drawLine(center.x, center.y, center.x + 30, center.y + 90 * direction);
+        // dc.drawLine(center.x, center.y, center.x + 30, center.y + 90 * direction);
         var dy = mScreenSize.height * 0.5f - mViewSize.height;
         var dx = mViewSize.width * 0.5f;
         var a = Math.atan2(dy, dx) * DEG + 5;
         var degreeStart = 180 + a * direction;
-        var degreeEnd = 0 - a * direction;
-        var r = mScreenSize.height * 0.5f - 5;
+        // var degreeEnd = 0 - a * direction;
+        var r = mScreenSize.height * 0.5f - 8;
         var maxDegree = 180 - a * 2f;
-        System.println("----- pos " + atPos);
-        System.println("max degree = " + maxDegree);
+        // System.println("----- pos " + atPos);
+        // System.println("max degree = " + maxDegree);
         var hrRange = new Range(hrZones[0], hrZones[hrZones.size() - 1]);
-        System.println("hr range = " + hrRange.start + " to " + hrRange.end + " size " + hrRange.size);
+        // System.println("hr range = " + hrRange.start + " to " + hrRange.end + " size " + hrRange.size);
         var ratio = maxDegree / (hrRange.size + 1) * 1f;
-        System.println("ratio = " + ratio);
+        // System.println("ratio = " + ratio);
         var attr = direction == -1 ? Graphics.ARC_CLOCKWISE : Graphics.ARC_COUNTER_CLOCKWISE;
+        var active_start = 0;
+        var active_end = 0;
         for (var i = 0; i < hrZones.size() - 1; ++i) {
             var start = (hrZones[i] - hrRange.start) * ratio;
             var length = (hrZones[i + 1] - hrZones[i]) * ratio;
             dc.setColor(barColor(i + 1), barColor(i + 1));
             var ds = degreeStart + start * direction;
-            dc.drawArc(center.x, center.y, r, attr, ds, ds + length * direction);
+            var de = ds + length * direction;
+            if (i + 1 == hrZone) {
+                active_start = ds;
+                active_end = de;
+            } else {
+                dc.drawArc(center.x, center.y, r, attr, ds + 0.5f * direction, de - 1f * direction);
+            }
         }
-        //dc.setColor(Graphics.COLOR_PINK, Graphics.COLOR_PINK);
-        //dc.drawArc(center.x, center.y, r, attr, degreeStart, degreeEnd);
+        if (active_start != 0 && active_end != 0) {
+            dc.setPenWidth(penWidth + 6);
+            dc.setColor(barColor(hrZone), barColor(hrZone));
+            dc.drawArc(center.x, center.y, r, attr, active_start, active_end);
+        }
+        var clamp = clamp(hrValue, hrRange.start, hrRange.end) - hrRange.start;
+        var indicatorDegree = degreeStart + clamp * ratio * direction;
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_WHITE);
+        dc.setPenWidth(14);
+        dc.drawArc(center.x, center.y, r - 5, attr, indicatorDegree - 1.25f * direction, indicatorDegree + 2.5f * direction);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        //dc.setPenWidth(12);
+        dc.drawArc(center.x, center.y, r - 5, attr, indicatorDegree - 1f * direction, indicatorDegree + 2f * direction);
     }
 
     private function drawBar(dc as Dc, atPos as FieldPosition) {
@@ -242,15 +261,11 @@ class HRZonesDFView extends WatchUi.DataField {
         }
         dc.setColor(barColor(hrZone), Graphics.COLOR_BLACK);
         dc.fillRectangle(active_dx, active_dy, active_w, active_h);
-    }
 
-    private function drawIndicator(dc as Dc, atPos as FieldPosition) {
-        var hrRange = new Range(hrZones[0], hrZones[hrZones.size() - 1]);
-        var maxBarHr = hrRange.size - 1;
+        // indicator
         var clamp = clamp(hrValue, hrRange.start, hrRange.end);
-        var ratio = mViewSize.width * 1.0f / maxBarHr * 1.0f;
         var dx = (clamp - hrRange.start) * ratio;
-        var dy = barYOffset(atPos) + getIndicatorOffset(atPos);
+        dy = barYOffset(atPos) + getIndicatorOffset(atPos);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_WHITE);
         var dir = getIndicatorDirection(atPos);
         dc.fillPolygon([
@@ -365,7 +380,6 @@ class HRZonesDFView extends WatchUi.DataField {
             }
             default: {
                 drawBar(dc, pos);
-                drawIndicator(dc, pos);
                 break;
             }
         }
