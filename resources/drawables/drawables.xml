@@ -1,13 +1,3 @@
 <drawables>
     <bitmap id="LauncherIcon" filename="launcher_icon.png" />
-    <bitmap id="digit0" filename="digit0.png" />
-    <bitmap id="digit1" filename="digit1.png" />
-    <bitmap id="digit2" filename="digit2.png" />
-    <bitmap id="digit3" filename="digit3.png" />
-    <bitmap id="digit4" filename="digit4.png" />
-    <bitmap id="digit5" filename="digit5.png" />
-    <bitmap id="digit6" filename="digit6.png" />
-    <bitmap id="digit7" filename="digit7.png" />
-    <bitmap id="digit8" filename="digit8.png" />
-    <bitmap id="digit9" filename="digit9.png" />
 </drawables>
