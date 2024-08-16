@@ -50,15 +50,32 @@ class HRZonesDFView extends WatchUi.DataField {
     private const MIN_ZONE = 0;
     private const MAX_ZONE = 5;
     private const DEG = 57.29578f;
+    private const FONT_W = 20f; // px
+    private const FONT_H = 32f; // px
 
     hidden var hrZones as Toybox.Lang.Array<Number>;
     hidden var hrRanges as Toybox.Lang.Array<Number>;
 
     private var mScreenSize as Size;
 
+    private var mCustomDigits as Toybox.Lang.Array<BitmapResource>;
+
     // Set the label of the data field here.
     function initialize() {
         DataField.initialize();
+
+        mCustomDigits = [
+            WatchUi.loadResource(Rez.Drawables.digit0),
+            WatchUi.loadResource(Rez.Drawables.digit1),
+            WatchUi.loadResource(Rez.Drawables.digit2),
+            WatchUi.loadResource(Rez.Drawables.digit3),
+            WatchUi.loadResource(Rez.Drawables.digit4),
+            WatchUi.loadResource(Rez.Drawables.digit5),
+            WatchUi.loadResource(Rez.Drawables.digit6),
+            WatchUi.loadResource(Rez.Drawables.digit7),
+            WatchUi.loadResource(Rez.Drawables.digit8),
+            WatchUi.loadResource(Rez.Drawables.digit9),
+        ];
 
         hrZones = UserProfile.getHeartRateZones(UserProfile.HR_ZONE_SPORT_RUNNING);
 
@@ -319,9 +336,9 @@ class HRZonesDFView extends WatchUi.DataField {
     private function getLabelOffset(atPos as FieldPosition) {
         switch (atPos) {
             case TOP: 
-                return 5;
+                return 10;
             case BOTTOM:
-                return -5;
+                return -10;
             case MIDDLE:
                 return -10;
             case FULL:
@@ -350,19 +367,66 @@ class HRZonesDFView extends WatchUi.DataField {
         }
     }
 
+    private function getHRDigits() as Toybox.Lang.Array<Number or Null> {
+        var digits = [null, null, null];
+        var value = hrValue;
+        if (hrValue == 0) {
+            return [null, null, 0];
+        }
+        var index = 2;
+        while (value > 10) {
+            digits[index] = Math.round(value % 10) as Number;
+            index -= 1;
+            value /= 10;
+        }
+        digits[index] = Math.round(value) as Number;
+        return digits;
+    }
+
+    private function isCustomFont(atPos as FieldPosition) {
+        switch (atPos) {
+            case TOP:
+            case BOTTOM:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     function onUpdate(dc as Dc) {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_WHITE);
         dc.clear();
         var pos = getFieldPosition();
         var labelOffset = getLabelOffset(pos);
-        var direction = getIndicatorDirection(pos);
-        dc.drawText(
-            mViewSize.width / 2f,
-            mViewSize.height / 2f + labelOffset,
-            getFont(pos), 
-            hrValue.format("%d"), 
-            (Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER)
-        );
+        if (isCustomFont(pos)) {
+            var digits = getHRDigits();
+            var dx = 0;
+            var nonEmptyDigits = 0;
+            for (var i = 0; i < digits.size(); ++i) {
+                System.println(digits[i]);
+                if (digits[i] != null) {
+                    nonEmptyDigits += 1;
+                }
+            }
+            var textWidth = nonEmptyDigits * FONT_W;
+            for (var i = 0; i < digits.size(); ++i) {
+                var d = digits[i];
+                if (d != null && d instanceof Toybox.Lang.Number) {
+                    var x = mViewSize.width / 2f + dx - textWidth / 2f;
+                    var y = mViewSize.height / 2f + labelOffset - FONT_H / 2f;
+                    dc.drawBitmap(x, y, mCustomDigits[d]);
+                    dx += FONT_W;
+                }
+            }
+        } else {
+            dc.drawText(
+                mViewSize.width / 2f,
+                mViewSize.height / 2f + labelOffset,
+                getFont(pos), 
+                hrValue.format("%d"), 
+                (Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER)
+            );
+        }
         if (isZoneLabelVisible(pos)) {
             dc.drawText(
                 mViewSize.width / 2f,
